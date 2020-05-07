@@ -1,10 +1,12 @@
 package br.com.recatalog.util;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +18,6 @@ import org.eclipse.jgit.api.CheckoutCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.ResetCommand;
-import org.eclipse.jgit.api.RevertCommand;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.AbortedByHookException;
 import org.eclipse.jgit.api.errors.ConcurrentRefUpdateException;
@@ -29,7 +30,6 @@ import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.errors.NoWorkTreeException;
 import org.eclipse.jgit.lib.Constants;
-import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -48,31 +48,6 @@ public class GitSourceManagement {
 		return repo;
 	}
 	
-//	private static String exceptionToString(Exception e0) {
-//		Path pathFile = null;
-//		File tempFile = null;
-//		String ret = null;
-//		try {
-//			pathFile = Files.createTempFile("arcatalogExceptionFormat", ".tmp");
-//			tempFile = pathFile.toFile();
-//			PrintStream err = new PrintStream(tempFile);
-//			System.setErr(err);
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//			StringWriter exceptionStackError = new StringWriter();
-//			e.printStackTrace(new PrintWriter(exceptionStackError));
-//			ret =  exceptionStackError.toString();
-//			System.setErr(System.err);
-//			return ret;
-//		}
-//		e0.printStackTrace();
-//		StringWriter exceptionStackError = new StringWriter();
-//		e0.printStackTrace(new PrintWriter(exceptionStackError));
-//		ret =  exceptionStackError.toString();
-//		System.setErr(System.err);
-//		return ret;
-//	}
-	
 	public static void addFileToRepoAndStage(String repoPath, String fileToAddPath) throws IOException, NoFilepatternException, GitAPIException {
 		String fileName = addFileToRepository(fileToAddPath, repoPath);
 		addFileToStage(repoPath,fileName);
@@ -90,7 +65,7 @@ public class GitSourceManagement {
 		git.close();
 	}
 	
-	public static boolean addAllToStage(String repoPath) throws IOException, NoFilepatternException, GitAPIException {
+	public static boolean addAllFilesToStage(String repoPath) throws IOException, NoFilepatternException, GitAPIException {
 		if(!hasModified(repoPath)) return false;
 		Git git = Git.open(new File(repoPath));
 		Set<String> files = getModifiedFiles(repoPath);
@@ -138,20 +113,7 @@ public class GitSourceManagement {
 	public static RevCommit commit(String repoPath, PropertyList _properties) throws IOException, NoHeadException, NoMessageException, UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
 		Git git = Git.open(new File(repoPath));
 		Status status = git.status().call();
-		
-//	    Set<String> uncommittedChanges = status.getUncommittedChanges();
-//	    Set<String> modified = status.getModified();
-//	    Set<String> added = status.getAdded();
 	    Set<String> changed = status.getChanged();
-//	    Set<String> removed = status.getRemoved();
-
-
-//	    System.err.println("uncommittedChanges: " + uncommittedChanges);
-//	    System.err.println("Modified: " + modified);
-//	    System.err.println("added: " + added);
-//	    System.err.println("changed: " + changed);
-//	    System.err.println("removed: " + removed);
-
 	    
 	    // commit is needed?
 	    if( changed.size() == 0) return null;
@@ -196,6 +158,18 @@ public class GitSourceManagement {
 		checkout.call();
 		git.close();
 		return true;
+	}
+	
+	public static List<File> addFilesToRepoFolder(String repoPath, List<String> files, String ...baseFolder) throws IOException {
+		for(String filepath : files) {
+			File ff = new File(baseFolder[0] + System.getProperty("file.separator")  + filepath);
+			String fileRepo = repoPath + System.getProperty("file.separator") + filepath;
+			FileInputStream fis = new FileInputStream(ff);
+			BicamSystem.writeToFile(fis, fileRepo);
+		}
+		
+		File repoFolder = new File(repoPath);
+		return Arrays.asList(repoFolder.listFiles());
 	}
 	
 	/*
@@ -272,7 +246,6 @@ public class GitSourceManagement {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 		return true;		
 	}
 	
@@ -365,12 +338,8 @@ public class GitSourceManagement {
 		if(file == null) return null;
 
 		File gitFile = new File(dir,file.getName());
-//		try {
-			FileUtils.copyFile(file, gitFile);
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//			return null;
-//		}
+		FileUtils.copyFile(file, gitFile);
+
 		return gitFile.getName();
 	}
 	
@@ -426,26 +395,7 @@ public class GitSourceManagement {
 	}
 	
 	public static void main(String[] args) throws IOException {
-//		String gitFolder = "C:/repository_git";
 		String gitFolder =  "C:\\Git_Projects\\SEGUROS\\R1PAB001";
-//		boolean t = SCMGit.init(gitFolder);
-//		System.out.println(t);
-//		boolean v = add("*", gitFolder);
-		
 		System.err.println(lastCommitId(gitFolder));
-
-///		boolean v = addPattern(".", gitFolder);
-///		System.out.println(v);
-		
-/*		PropertyList properties = new PropertyList();
-		
-		properties.addProperty("AUTHOR", "José");
-		properties.addProperty("EMAIL", "jose@gmail.com");
-		properties.addProperty("DESCRIPTION", "Teste de commit.");
-		
-		boolean c = commit( gitFolder, properties);
-		System.out.println(c);*/
-		
-//		boolean c = log(gitFolder);
 	}
 }

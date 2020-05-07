@@ -19,6 +19,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.DigestInputStream;
@@ -1009,6 +1010,30 @@ public class BicamSystem {
 	//	byte raw[] = md.digest();
 	//	return new String(digest); // binary format nï¿½o ï¿½ transmitido via http protocol
 		return Base64.getEncoder().encodeToString(digest);
+	}
+	
+	
+/*
+ * 	grava arquivo. Se diretório não exixtir é criado
+ *  Motivação: inserir arquivo em repostório Git
+ *  
+ */
+	public static void writeToFile(InputStream fileInputStream,
+			String targetFilePath) throws IOException {
+		File file = new File(targetFilePath);
+		
+		if(!file.getParentFile().exists()) file.getParentFile().mkdirs();
+
+		OutputStream out = new FileOutputStream(new File(
+				targetFilePath));
+		int read = 0;
+		byte[] bytes = new byte[1024];
+
+		while ((read = fileInputStream.read(bytes)) != -1) {
+			out.write(bytes, 0, read);
+		}
+		out.flush();
+		out.close();
 	}
 	
 	// save uploaded file to new location
