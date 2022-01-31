@@ -1,6 +1,5 @@
 package br.com.recatalog.util;
 
-
 import java.security.InvalidParameterException; 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,9 +27,14 @@ public class PropertyList {
 			properties.put(e.getKey(), e.getValue());
 		}
 	}
+//	
+//	public void addProperty(String propertykey, Object propertyValue) {
+//		properties.put(propertykey, propertyValue);
+//	}
 	
-	public void addProperty(String propertykey, Object propertyValue) {
+	public PropertyList addProperty(String propertykey, Object propertyValue) {
 		properties.put(propertykey, propertyValue);
+		return this;
 	}
 	
 	public void addPropertyInNested(String propertykey, Object propertyValue, String nestedKey) {
@@ -126,8 +130,8 @@ public class PropertyList {
 		if(o == null) {
 			try {
 				throw new InvalidParameterException("PropertyList mustProperty");
-//			} catch (InvalidParameterException e) {
-//				BicamSystem.printLog("ERROR", "PROPERTY: '" + _key + "' CANT BE NULL");
+			} catch (InvalidParameterException e) {
+				BicamSystem.printLog("ERROR", "PROPERTY: '" + _key + "' CANT BE NULL");
 			}
 			finally {
 				return null;
@@ -229,6 +233,21 @@ public class PropertyList {
 		return ((ArrayList)properties.get(propertyKey)).size();
 	}	
 	
+	public int appendProperties(PropertyList _properties) {
+		int appendedProperties = 0;
+		if(_properties.size() == 0) return 0;
+		for(Entry<String,Object> e : _properties.getEntries()) {
+			properties.put(e.getKey(), e.getValue());
+			appendedProperties++;
+		}
+		return appendedProperties;
+	}
+	
+	
+	
+	
+	
+	
 	public String toString(){
 		StringBuffer sb = new StringBuffer();
 		sb.append("{");
@@ -236,30 +255,37 @@ public class PropertyList {
 			if(!sb.toString().equals("{")){
 				sb.append(", ");
 			}
-			if(properties.get(key) instanceof String){
-				sb.append(key + "=" + (String)properties.get(key));
+			if(properties.get(key) != null) {
+				sb.append(key + "=" + properties.get(key).toString());
 			}
-			else if ((properties.get(key) != null) &&   properties.get(key).getClass().getSuperclass().getSimpleName().endsWith("List")){
-				sb.append( key + "=" + ((ArrayList)properties.get(key)));
-			}			
-			else if ((properties.get(key) != null) && properties.get(key).getClass().getSuperclass().getSimpleName().endsWith("Set")){
-				sb.append( key + "=" + ((Set)properties.get(key)));
-			}
-			else if (properties.get(key) instanceof PropertyList){
-				sb.append(key + "=" + ((PropertyList)properties.get(key)).getProperties());
-			}
-//			else if (properties.get(key).getClass().getName().startsWith("java.lang")) {
-//				sb.append(key + "=" + properties.get(key).toString());
-//			}
 			else {
-				if(properties.get(key) != null) {
-					sb.append("=" + properties.get(key).getClass() != null ?
-					key + "=" + properties.get(key).getClass().getName() : "NULL");
-				}
-				else{
-					sb.append(key + "=" + "NULL");
-				}
+				sb.append(key + "=" + "NULL");
 			}
+
+//			if(properties.get(key) instanceof String){
+//				sb.append(key + "=" + (String)properties.get(key));
+//			}
+//			else if ((properties.get(key) != null) &&   properties.get(key).getClass().getSuperclass().getSimpleName().endsWith("List")){
+//				sb.append( key + "=" + ((ArrayList)properties.get(key)));
+//			}			
+//			else if ((properties.get(key) != null) && properties.get(key).getClass().getSuperclass().getSimpleName().endsWith("Set")){
+//				sb.append( key + "=" + ((Set)properties.get(key)));
+//			}
+//			else if (properties.get(key) instanceof PropertyList){
+//				sb.append(key + "=" + ((PropertyList)properties.get(key)).getProperties());
+//			}
+////			else if (properties.get(key).getClass().getName().startsWith("java.lang")) {
+////				sb.append(key + "=" + properties.get(key).toString());
+////			}
+//			else {
+//				if(properties.get(key) != null) {
+//					sb.append("=" + properties.get(key).getClass() != null ?
+//					key + "=" + properties.get(key).getClass().getName() : "NULL");
+//				}
+//				else{
+//					sb.append(key + "=" + "NULL");
+//				}
+//			}
 		}
 		return sb.append("}").toString();
 	}
@@ -287,5 +313,4 @@ public class PropertyList {
 		properties.getNestedProperty("PROPERTIES").addProperty("Prop02","VALUE02");
 		System.err.println(properties);
 	}
-
 }

@@ -32,7 +32,7 @@ public class InventoryItem {
 	
 	@Override
 	public String toString() {
-		return "InventoryItem [id=" + id + ", values=" + values + "]";
+		return "InventoryItem [key=" + id + ", values=" + values + "]";
 	}
 
 	@Override

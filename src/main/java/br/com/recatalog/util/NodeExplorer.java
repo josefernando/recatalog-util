@@ -1,6 +1,7 @@
 package br.com.recatalog.util;
 
 
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -12,9 +13,10 @@ import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 
-//import br.com.bicam.util.symboltable.IScope_New;
-//import br.com.bicam.util.symboltable.SymbolTable_New;
-//import br.com.bicam.util.symboltable.Symbol_New;
+/*import br.com.bicam.util.symboltable.IScope_New;
+//import br.com.bicam.util.symboltable.SymbolTable_b;
+import br.com.bicam.util.symboltable.SymbolTable_New;
+import br.com.bicam.util.symboltable.Symbol_New;*/
 
 public class NodeExplorer {
 	final static String[] sulfixTypeIndicator = new String[]{"&","%","#","!","@","$","\""};
@@ -36,7 +38,12 @@ public class NodeExplorer {
     	if(_ctx.getChild(0) instanceof RuleContext) {
     		return isOneChildOnlyLine((RuleContext)_ctx.getChild(0));
     	}
-
+    	
+/*    	for(int ix=0; ix < _ctx.getChildCount(); ix++) {
+    		if(_ctx.getChild(ix) instanceof RuleContext) {
+    			if(!isOneChildOnlyLine((RuleContext)_ctx.getChild(ix))) return false;
+    		}
+    	}*/
     	return true;
     }
     
@@ -68,7 +75,10 @@ public class NodeExplorer {
         	if(_ctx.getChild(i).getClass().getSimpleName().equals(_className)){
         		return _ctx.getChild(i);
         	}
-
+/*       		if(_ctx.getChild(i).getChildCount() > 0){
+       			Object cls = getFirstChildClass((RuleContext)_ctx.getChild(i), _className);
+       			if (cls != null) return cls;
+       		}*/
         	Object ret = getFirstChildClass(_ctx.getChild(i),_className );
         	if(ret != null) return ret;
     	}
@@ -235,21 +245,45 @@ public class NodeExplorer {
     	}
     } 
 
-//    public static Symbol_New getAncestorByProperty(Symbol_New _sym, String _property_key, String _propertyValue){
-//    	if( _sym.getEnclosingScope() !=null && _sym.getEnclosingScope() instanceof Symbol_New){
-//    		   Symbol_New s = (Symbol_New)_sym.getEnclosingScope();
-//    		   if(s.hasProperty(_property_key, _propertyValue)){
-//    			   return s;
-//    		   }
-//    		   if(_propertyValue.equals("*")){ // não leva em consideraçãoo valor da propriedade
-//    			   if(s.getProperty(_property_key) != null) return s;
-//    		   }
-//    		   if(_sym.getEnclosingScope() == null) return null;
-//    		   if(!(_sym.getEnclosingScope() instanceof Symbol_New)) return null;
-//    		   return getAncestorByProperty((Symbol_New)_sym.getEnclosingScope(), _property_key, _propertyValue);
-//    	}
-//    	return null;
-//    }
+	/*
+	 * public static Symbol getAncestorByProperty(Symbol_New _sym, String
+	 * _property_key, String _propertyValue){ if( _sym.getEnclosingScope() !=null &&
+	 * _sym.getEnclosingScope() instanceof Symbol_New){ Symbol_New s =
+	 * (Symbol_New)_sym.getEnclosingScope(); if(s.hasProperty(_property_key,
+	 * _propertyValue)){ return s; } if(_propertyValue.equals("*")){ // não leva em
+	 * consideraçãoo valor da propriedade if(s.getProperty(_property_key) != null)
+	 * return s; } if(_sym.getEnclosingScope() == null) return null;
+	 * if(!(_sym.getEnclosingScope() instanceof Symbol_New)) return null; return
+	 * getAncestorByProperty((Symbol_New)_sym.getEnclosingScope(), _property_key,
+	 * _propertyValue); } return null; }
+	 */
+
+/*    public static Symbol_New getBreathFirstChildSymbolByProperty(CopyOnWriteArrayList<Symbol_New> _queue, Symbol_New _sym, String _property_key, String _propertyValue){
+   	
+    	
+    	if(_queue.isEmpty()){
+    		System.err.println("************** ERROR: Symbol Not Exist");
+    		return null;
+    	}
+    	
+    	if (!(_queue.get(0) instanceof IScope)) return null;
+    	
+    	for(SymbolList symList : ((IScope)_queue.remove(0)).getMembers().values()){
+        	for(Symbol_New ss : symList.getSymbols()){
+        		if(ss.getProperties().hasProperty(_property_key, _propertyValue, true))
+        			return ss;
+        		else _queue.add(ss);
+        	}
+        }
+    	
+    	for(Symbol_New s : _queue){
+    		Symbol_New ret = getBreathFirstChildSymbolByProperty(_queue, s, _property_key, _propertyValue);
+    		if (ret != null) return ret;
+    		if(_queue.isEmpty()) break;
+    	}        
+      
+    	return null;
+    } */   
     
     public static ParserRuleContext getNextAncestorClass(RuleContext _ctx, String _className){
     	if( _ctx.parent == null){
@@ -273,6 +307,15 @@ public class NodeExplorer {
     	
    		return hasAncestorWithLabel((ParserRuleContext)_ctx.parent, _label);
     } 
+    
+	public static List<ParserRuleContext> getChildren(RuleContext _ctx){
+		List<ParserRuleContext> children = new ArrayList<ParserRuleContext>();
+		for(int i = 0; i < _ctx.getChildCount(); i++){
+			if(!(_ctx.getChild(i) instanceof ParserRuleContext)) continue;
+			children.add((ParserRuleContext) _ctx.getChild(i));
+		}
+		return children;
+	}
     
     public static ParserRuleContext getAncestorClass(RuleContext _ctx, 
     							String _className,
@@ -359,6 +402,16 @@ public class NodeExplorer {
     	}
        	return null;
     }    
+    
+/*	public boolean isSibling(RuleContext _ctx){
+		RuleContext parent = _ctx.parent;
+		if(parent == null) return false;
+		for(int i = 0; i < parent.getChildCount(); i++){
+			if(parent.getChild(i).getClass().getSimpleName().equalsIgnoreCase("AccessMemberOpContext"))
+				return true;
+		}
+		return false;
+	}*/
 	
 	public static ParserRuleContext getFunction(FunctionSearch _f, ParserRuleContext _funContext){
 		String name = _f.getName();
@@ -418,12 +471,21 @@ public class NodeExplorer {
 		return name;
 	}
 	
-//	public static IScope_New getScope(ParserRuleContext _ctx, SymbolTable_New _st){
-//		IScope_New scope = _st.getScope(_ctx);
-//		if(scope != null) return scope;
-//		if(_ctx.getParent() != null) return getScope(_ctx.getParent(), _st);
-//		return null;
-//	}	
+/*	
+	public static IScope getScope(ParserRuleContext _ctx, SymbolTable_b _st){
+		IScope scope = _st.getScope(_ctx);
+		if(scope != null) return scope;
+		if(_ctx.getParent() != null) return getScope(_ctx.getParent(), _st);
+		return null;
+	}
+*/	
+	
+	/*
+	 * public static IScope_New getScope(ParserRuleContext _ctx, SymbolTable_New
+	 * _st){ IScope_New scope = _st.getScope(_ctx); if(scope != null) return scope;
+	 * if(_ctx.getParent() != null) return getScope(_ctx.getParent(), _st); return
+	 * null; }
+	 */
 	
 	public static ParserRuleContext getSibling(RuleContext _ctx, String _className){
 		return getFirstSibling( _ctx, _className);
@@ -438,15 +500,6 @@ public class NodeExplorer {
 				return (ParserRuleContext)parent.getChild(i);
 		}
 		return null;
-	}
-	
-	public static List<ParserRuleContext> getChildren(RuleContext _ctx){
-		List<ParserRuleContext> children = new ArrayList<ParserRuleContext>();
-		for(int i = 0; i < _ctx.getChildCount(); i++){
-			if(!(_ctx.getChild(i) instanceof ParserRuleContext)) continue;
-			children.add((ParserRuleContext) _ctx.getChild(i));
-		}
-		return children;
 	}
 	
 	public static boolean hasLabel(ParserRuleContext _ctx, String _label){ // label=context
@@ -492,6 +545,7 @@ public class NodeExplorer {
 		return false;
 	}	
 	
+//	public static ParserRuleContext getLastSibling(RuleContext _ctx){
 	public static ParseTree getLastSibling(RuleContext _ctx){
 		
 		RuleContext parent = _ctx.parent;
@@ -538,6 +592,7 @@ public class NodeExplorer {
 		int parserRuleContextCount = 0;
 		if(parent == null) return null;
 		for(int i = 0; i < parent.getChildCount(); i++){
+//			if(parserRuleContextCount > _idx) {
 			if(parserRuleContextCount == _idx) {
 				if(parent.getChild(i) instanceof ParserRuleContext)
 					return (ParserRuleContext)parent.getChild(i);
@@ -548,6 +603,19 @@ public class NodeExplorer {
 		}
 		return null;
 	}		
+	
+/*	public static ParseTree getSiblingByIndex(RuleContext _ctx, int _idx){
+		RuleContext parent = _ctx.parent;
+		if(parent == null) return null;
+		for(int i = 0; i < parent.getChildCount(); i++){
+			if(i == _idx) {
+				if(parent.getChild(i) instanceof ParserRuleContext)
+					return (ParserRuleContext)parent.getChild(i);
+				else return parent.getChild(i);
+			}
+		}
+		return null;
+	}	*/
 	
 	public static int getSiblingIndex(RuleContext _ctx, boolean _parserRuleContext){
 		RuleContext parent = _ctx.parent;
@@ -579,11 +647,13 @@ public class NodeExplorer {
 		return null;
 	}
 	
-	public static ParseTree getNextSibling(RuleContext _ctx){
+//	public static ParserRuleContext getNextSibling(RuleContext _ctx){
+		public static ParseTree getNextSibling(RuleContext _ctx){
 		
 		return getSiblingByIndex(_ctx, getSiblingIndex(_ctx)+1);
 	}
 	
+//	public static ParserRuleContext getPrevSibling(RuleContext _ctx){
 	public static ParseTree getPrevSibling(RuleContext _ctx){
 		
 		return getSiblingByIndex(_ctx, getSiblingIndex(_ctx)-2);  /// ze tratar ser -1
@@ -606,7 +676,22 @@ public class NodeExplorer {
     	}
     	return null;
     }
-
+    
+/*    public static List<IScope> getSibling(IScope _scope){
+    	List<IScope> sibligList = new LinkedList<IScope>();
+    	if(_scope.getEnclosingScope() != null){
+    		IScope enclosing = _scope.getEnclosingScope();
+    		for(SymbolList siblingList : enclosing.getMembers().values()){
+    			for(Symbol_New sym: siblingList.getSymbols()){
+    				if(sym instanceof IScope){
+    					sibligList.add((IScope)sym);
+    				}
+    			}
+    		}
+    	}
+    	return sibligList;    	
+    } */
+    
     public static boolean isContext(RuleContext _ctx, String _text){
     	if(_ctx.getText().equalsIgnoreCase(_text))
     		return true;
@@ -628,4 +713,50 @@ public class NodeExplorer {
     	}
     	return false;
     }
+    
+/*    public static ArrayList<ParserRuleContext> setSymbolToParent(ParserRuleContext _ctx, Symbol_New _sym, PropertyList _prop){
+    	// Lista de context que tiver símbolos associados
+    	ArrayList<ParserRuleContext> resultContextList = (ArrayList<ParserRuleContext>)_prop.getProperty("RESULT_CONTEXT_LIST");
+    	String memberAccessOper = (String)_prop.getProperty("MEMBER_ACCESS_OPER");
+    	SymbolTable_b st = (SymbolTable_b)_prop.getProperty("SYMBOLTABLE");
+    	// Lista de context que são passíveis de ter símbolos associados. Ex: ExprContext e IdentifierContext
+    	ArrayList<String> classNameToSetList = (ArrayList<String>)_prop.getProperty("CLASS_NAME_TO_SET_LIST");
+//    	ArrayList<String> validOperList = (ArrayList<String>)_prop.getProperty("VALID_OPER_LIST");
+
+    	boolean isClassToSet = false;
+    	for(String classToSet : classNameToSetList){
+			if( _ctx.getParent().getClass().getSimpleName().equals(classToSet)){
+				isClassToSet = true;
+				break;
+			}
+    	}
+    	
+    	if(!isClassToSet) return resultContextList; // Não É ExprContext ou IdentifierContext
+    	
+    	String operContext = null;
+    	for(ParseTree p : ((ParserRuleContext)_ctx.parent).children){
+    		if(p.getClass().getSimpleName().endsWith("OperContext")){
+    			operContext = p.getClass().getSimpleName();
+    			break;
+    		}
+    	}
+    	
+    	if(operContext == null) { //Não OperContext as a child
+    		    st.setSymbol((ParserRuleContext)_ctx.parent, _sym);
+        		resultContextList.add((ParserRuleContext)_ctx.parent);
+        		return resultContextList;    			
+    	}
+    	
+    	if(!operContext.equals(memberAccessOper) 
+    			&& !operContext.equals("NewOperContext")) return resultContextList; 
+    	
+		if(NodeExplorer.getSiblingIndex(_ctx) // member é última parte do nome qualificado
+				== NodeExplorer.getSiblingIndex(NodeExplorer.getLastSibling(_ctx, _ctx.getClass().getSimpleName()))){
+		    st.setSymbol((ParserRuleContext)_ctx.parent, _sym);
+			resultContextList.add((ParserRuleContext)_ctx.parent);
+    		return resultContextList;    			
+		}
+
+    	return resultContextList;
+    }*/
 }

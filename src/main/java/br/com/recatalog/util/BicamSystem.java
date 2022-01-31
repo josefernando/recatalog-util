@@ -19,6 +19,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,6 +27,7 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
@@ -43,6 +45,10 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
+import br.com.recatalog.graph.BicamNode;
+import br.com.recatalog.graph.InputGraph;
+import br.com.recatalog.graph.NodeList;
+
 //import com.ibm.icu.text.CharsetDetector;
 //import com.ibm.icu.text.CharsetMatch;
 
@@ -51,98 +57,12 @@ public class BicamSystem {
 	static final String FILE_NAME = "FILE_NAME";
 	static final String XML_FILE = "XML_FILE";
 
-	 static final String[] sulfixTypeIndicator = new String[] { "&", "%", "#", "!", "@", "$" };
-
-/*	 static final Map<Character,String> toHtmlEntity = new HashMap<Character,String>() {{
-			put(' ',"&nbsp;");
-			put('\'',"&quot;");				
-			put('(',"&lpar;");
-			put(')',"&rpar;");
-			put('#',"&num;");
-			put('$',"&dollar;");
-			put('%',"&percnt;");
-			put('\'',"&apos;");
-			put('*',"&ast;");
-			put('+',"&plus;");
-			put('.',"&period;");
-			put('/',"&sol;");
-			put(':',"&colon;");
-			put(';',"&semi;");
-			put('=',"&equals;");
-			put('>',"&equals;");
-			put('?',"&quest;");
-			put('@',"&commat;");
-			put('[',"&lsqb;");
-			put(']',"&rsqb;");
-			put('\\',"&bsol;");
-			put('^',"&hat;");
-			put('_',"&lowbar;");
-			put('{',"&lcub;");
-			put('}',"&rcub;");
-
-			put('ï¿½',"&Aacute;");			
-			put('ï¿½',"&Eacute;");
-			put('ï¿½',"&Iacute;");
-			put('ï¿½',"&Oacute;");
-			put('ï¿½',"&Uacute;");
-			put('ï¿½',"&aacute;");
-			put('ï¿½',"&eacute;");
-			put('ï¿½',"&iacute;");
-			put('ï¿½',"&oacute;");
-			put('ï¿½',"&uacute;");
-			put('ï¿½',"&Acirc;");
-			put('ï¿½',"&Ecirc;");
-//			put('ï¿½',"&Ocirc;");
-			put('ï¿½',"&acirc;");
-			put('ï¿½',"&ecirc;");
-//			put('ï¿½',"&ocirc;");
-//			put('ï¿½',"&Agrave;");
-//			put('ï¿½',"&Egrave;");
-//			put('ï¿½',"&agrave;");
-//			put('ï¿½',"&egrave;");
-//			put('ï¿½',"&Uuml;");
-//			put('ï¿½',"&uuml;");
-			put('ï¿½',"&Ccedil;");			
-			put('ï¿½',"&ccedil;");
-			put('ï¿½',"&Atilde;");			
-			put('ï¿½',"&atilde;");
-			put('ï¿½',"&Otilde;");			
-			put('ï¿½',"&otilde;");
-//			put('ï¿½',"&Ntilde;");			
-//			put('ï¿½',"&ntilde;");
-	 }};*/
-	 
-	 
-		
-/*	public static String toHtml(SymbolTable_New _st, ParserRuleContext _ctx, String _char) {
-		String c = toHtmlEntity.get(_char);
-		if(c == null) {
-			printLog(_st, _ctx, "ERROR", "CHARACTER "  + _char + " NOT FOUND TO CONVERT HTML ENTITY");
-		}
-		return c;
-	}*/
-
-/*	public static String toHtml(String _char) {
-		String c = toHtmlEntity.get(_char);
-		if(c == null) {
-			return _char;
-		}
-		return c;
-	}*/
-	
-/*	public static  void printLog(SymbolTable_New _st, ParserRuleContext _ctx, String _severity, String _msg, Exception... e) {
-		System.err.format("*** %s - %s at line %d in compilation unit %s%n",
-				   _severity, _msg,  _ctx.start.getLine(),_st.getCompilationUnitName(_ctx));
-		if(_severity.equalsIgnoreCase("ERROR")) {
-			printStackTrace(e.length > 0 ? e[0]: null);
-			System.exit(1);
-		}
-	}*/	
+    static final String[] sulfixTypeIndicator = new String[] { "&", "%", "#", "!", "@", "$" };
 	
 	public static  void printLog(String _severity, String _msg) {
 		try {
 			throw new Exception();
-		}catch (Exception e) {
+		} catch (Exception e) {
 			printLog(_severity,_msg,e);
 		}
 	}
@@ -171,7 +91,100 @@ public class BicamSystem {
 		}
 	}
 	
+	public static void fileFilterByRegex(String fileName, String regex) {
+		
+		/**
+		 * site para download:
+		 *   http://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/cotacoes/cotacoes/ 
+		 *
+		 */
+		try {
+			File file = new File(fileName);
+			
+			Path path = Paths.get(file.getCanonicalPath() + ".filtered");
+			BufferedWriter writer = Files.newBufferedWriter(path, Charset.forName("UTF-8"));
+			
+			Scanner sc = new Scanner(file, StandardCharsets.UTF_8.name());
+	
+			Integer count = 0;
+			
+			while (sc.hasNextLine()){
+				String line = null;
+				line = sc.nextLine();
+//				regex = "(?i)^2020-10-13;(?=MMXM11).*$";
+				if(!line.matches(regex)) continue;
+				if(count > 0 ) {
+					writer.write(System.getProperty("line.separator") + line );
+				}
+				else {
+					writer.write(line );
+				}
+				count++;
+			}
+	
+			writer.flush();
+			System.out.println(file.getAbsolutePath() + " - filtered " + count + " lines!");
+			sc.close();
+		} 
+		
+		catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} 
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void resultEvaluatingByShare(String fileName) {
+		/**
+		 * input é a saída do método fileFilterByRegex 
+		 * void br.com.recatalog.util.BicamSystem.fileFilterByRegex(String fileName, String regex)
+		 */
+		
+		Deque<Double> up = new ArrayDeque<Double>();
+		Deque<Double> down = new ArrayDeque<Double>();
+		Double current = null;
+		
+		Boolean goingUp = null;
+		
+		try {
+			File file = new File(fileName);
+			
+			Scanner sc = new Scanner(file, StandardCharsets.UTF_8.name());
+			
+			while (sc.hasNextLine()){
+				String line = null;
+				line = sc.nextLine();
+				Double price = Double.parseDouble(line.split(";")[3].replace(",","."));
 
+				if(current == null) {
+					current = price;
+					continue;
+				}
+				
+				if(price > current) {
+					up.push(price);
+					current = price;
+					if(!down.isEmpty()) down.pop();
+					goingUp = true;
+				}
+				else if(price < current) {
+					down.push(price);
+					current = price;
+					if(!up.isEmpty()) up.pop();
+					goingUp = false;
+				}
+				else {
+					if(goingUp == null) continue;
+					else if(goingUp) up.push(price);
+						else down.push(price);
+				}
+			}
+			sc.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+	}	
 //==============
 /*	public static File toHtml(InputStream _inputStream, String _fileOutName, PropertyList... _properties) {
 		Integer rangeStartLineMark = null;
@@ -357,7 +370,7 @@ public class BicamSystem {
 	 * Dado um arquivo com a linha para formaï¿½ï¿½o de grapho... a b c
 	 * onde: a e b sï¿½o vï¿½rtices e c ï¿½ o peso da aresta
 	 */
-/*	public static PropertyList graphVertices(List<InputGraph> _inputGraph, String _separator) {
+	public static PropertyList graphVertices(List<InputGraph> _inputGraph, String _separator) {
 		Set<String> vertices = new HashSet<String>();
 		List<String> nameList;
 		String[] vertexToName;
@@ -383,9 +396,9 @@ public class BicamSystem {
 		properties.addProperty("NAME_TO_VERTEX", nameToVertex);
 		
 		return properties;
-	}*/
+	}
 	
-/*	public static PropertyList graphVertices(NodeList _nodeList, String _separator) {
+	public static PropertyList graphVertices(NodeList _nodeList, String _separator) {
 		Set<String> vertices = new HashSet<String>();
 		List<String> nameList;
 		String[] vertexToName;
@@ -410,7 +423,7 @@ public class BicamSystem {
 		properties.addProperty("NAME_TO_VERTEX", nameToVertex);
 		
 		return properties;
-	}*/	
+	}
 	
 	public static String[] removeParen(String[] _nameParts) { // A(i) -> A
 		int parenCount = 0;
@@ -959,7 +972,7 @@ public class BicamSystem {
 				new FileOutputStream(tempFile), "UTF8"));
 		
 	    BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file.toString()),"ISO_8859_1"));
-
+	    
 	    String line = null;
 		    while ((line = reader.readLine()) != null) {
 		        line = line + System.lineSeparator();
@@ -1120,9 +1133,12 @@ public class BicamSystem {
 		fis.close();
 		return sb.toString();
 	}
-			
 	
 	public static void main(String[] args) {
+		resultEvaluatingByShare("C:\\Download\\Bolsa_de_Valores_Dados\\b3_dados\\intraday\\historico\\TradeIntraday_20201013_1.MMXM11F.filtered");
+		//*==============================
+//->		fileFilterByRegex("C:\\Download\\Bolsa_de_Valores_Dados\\b3_dados\\intraday\\historico\\TradeIntraday_20201013_1.txt", "(?i)^2020-10-13;(?=MMXM11).*$");
+		/*===============================
     	File f  = new File("C:\\workspace\\workspace_desenv_java8\\visualbasic6\\antlr4.vb6\\input\\TIPMA00\\TIPMA1.VBP1");
     	File f1 = new File("C:\\workspace\\workspace_desenv_java8\\visualbasic6\\antlr4.vb6\\input\\TIPMA00\\TIPMA1.VBP1");
     	try {
@@ -1143,6 +1159,7 @@ public class BicamSystem {
     	} catch (Exception e) {
     		e.printStackTrace();
     	}
+    	=============================================*/
 		
 /*//		jaxbAdapterString("{REPOSITORY_PROPERTY03=s3, REPOSITORY_PROPERTY04=s4, FORM=[{DT_CREATED=13 ABR 2018, NOME=Form01}, {DT_CREATED=01 JAN 2018, NOME=Form02}], ENDERECO={NUMERO=125, AVENIDA=AV. 25 DE MARï¿½O}}");
 		

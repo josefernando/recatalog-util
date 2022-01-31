@@ -3,6 +3,8 @@ package br.com.recatalog.util;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class Inventory {
 	
@@ -27,7 +29,22 @@ public class Inventory {
 			
 			o.ifPresentOrElse(item -> item.getValues().add(value) ,
 					          () -> this.getItens().add(new InventoryItem(id,value)));
-		}
+	}
+	
+    public  Predicate<InventoryItem> matchNameCaseInsensitive(String name) {
+    	return item -> 	item.getId().equalsIgnoreCase(name);
+    }
+    
+    public List<InventoryItem> filterInventoryItem (List<InventoryItem> inventoryItens, 
+            Predicate<InventoryItem> predicate) {
+				return inventoryItens.stream()
+				.filter( predicate )
+				.collect(Collectors.<InventoryItem>toList());
+			}
+	
+	public List<InventoryItem> getItensByName(String name, Boolean ... isCaseSensitive) {
+		return filterInventoryItem(getItens(), matchNameCaseInsensitive(name));
+	}
 
 	@Override
 	public int hashCode() {
@@ -65,10 +82,12 @@ public class Inventory {
 		inventory1.add("REFERENCE","REF01");
 		inventory1.add("REFERENCE","REF02");
 		inventory1.add("REFERENCE1","REF01");
-
-		System.out.println(inventory.getItens());
-		System.out.println(inventory1.getItens());
-
-		System.out.println(inventory.equals(inventory1));
+//
+//		System.out.println(inventory.getItens());
+//		System.out.println(inventory1.getItens());
+//
+//		System.out.println(inventory.equals(inventory1));
+		
+		System.out.println(inventory.getItensByName("REFERENCE1"));
 	}	
 }
