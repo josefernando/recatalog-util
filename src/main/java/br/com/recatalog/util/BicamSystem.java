@@ -54,7 +54,7 @@ import br.com.recatalog.graph.NodeList;
 
 public class BicamSystem {
 	static final String INPUT_STREAM = "INPUT_STREAM";
-	static final String FILE_NAME = "FILE_NAME";
+	static final String FILE_NAME = "FILE_NAME" ; 
 	static final String XML_FILE = "XML_FILE";
 
     static final String[] sulfixTypeIndicator = new String[] { "&", "%", "#", "!", "@", "$" };
